@@ -1,0 +1,6 @@
+medication_name,category,type_final,frequency,data_type
+acetaminophen,correct drug name,generic,high,non-oov_cleaned
+acetaminofen,mispelled drug name,generic,high,OOV
+Tylenol,correct drug name,brand,high,non-oov_cleaned
+Tylonel,mispelled drug name,brand,low,OOV
+unknown product,not sure,unknown,unknown,uncleaned

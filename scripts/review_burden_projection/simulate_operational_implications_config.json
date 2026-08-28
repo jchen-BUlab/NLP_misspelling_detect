@@ -1,0 +1,52 @@
+{
+  "metrics": [
+    {
+      "model": "BERTDrug",
+      "recall": 0.718,
+      "specificity": 0.854
+    },
+    {
+      "model": "CharBERTDrug",
+      "recall": 0.780,
+      "specificity": 0.842
+    },
+    {
+      "model": "SpellChecker",
+      "recall": 0.995,
+      "specificity": 0.709
+    },
+      {
+	  "model": "fastTextML",
+	  "recall": 0.469,
+	  "specificity": 0.609
+      },
+      {
+	  "model": "bioWordVecML",
+	  "recall": 0.700,
+	  "specificity": 0.742
+      }
+  ],
+  "output_file": "./ltc/operational_projection.tsv",
+  "entries_per_batch": 1000,
+  "prevalences": [
+    0.005,
+    0.01,
+    0.02,
+    0.05
+  ],
+  "model_column": "model",
+  "recall_column": "recall",
+  "specificity_column": "specificity",
+  "round_digits": 2,
+  "make_figures": true,
+  "no_figures": false,
+  "figure_folder": null,
+  "figure_mode": "per_metric",
+  "figure_models": [
+    "BERTDrug",
+    "CharBERTDrug",
+    "SpellChecker",
+    "fastTextML",
+    "bioWordVecML"
+  ]
+}

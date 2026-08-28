@@ -1,0 +1,13 @@
+sample_key,term,target,target_label,term_type,data_type,frequency,CharBERTDrug_probability,BERTDrug_probability,SpellChecker_edit_distance,fasttext+xgboost_probability,BioWordVec_probability,SpellChecker_prediction
+example|0,alpha medicine,0,negative,generic,oov,low,0.08,0.05,0,0.10,0.20,0
+example|1,alhpa medicine,1,positive,generic,oov,low,0.91,0.88,14,0.76,0.64,1
+example|2,novexa,0,negative,brand,oov,low,0.22,0.31,6,0.58,0.45,1
+example|3,nvoexa,1,positive,brand,oov,low,0.83,0.73,6,0.66,0.51,1
+example|4,beta tablets,0,negative,generic,oov,high,0.12,0.09,0,0.16,0.30,0
+example|5,btea tablets,1,positive,generic,oov,high,0.79,0.81,12,0.69,0.57,1
+example|6,xylarin,0,negative,brand,oov,low,0.61,0.56,7,0.63,0.48,1
+example|7,xylrain,1,positive,brand,oov,low,0.74,0.67,7,0.59,0.52,1
+example|8,gamma solution,0,negative,generic,non-oov_cleaned,low,0.04,0.03,0,0.08,0.11,0
+example|9,gamna solution,1,positive,generic,non-oov_cleaned,low,0.93,0.95,14,0.82,0.71,1
+example|10,unresolved product,0,negative,brand,uncleaned,low,0.52,0.44,18,0.55,0.46,1
+example|11,unresovled product,1,positive,brand,uncleaned,low,0.77,0.72,18,0.61,0.54,1

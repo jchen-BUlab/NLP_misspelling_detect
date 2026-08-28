@@ -1,0 +1,24 @@
+CharacterBERT source code and pretrained medical-model resources used by the
+study were downloaded from:
+
+https://github.com/helboukkouri/character-bert
+
+CharacterBERT model and character-indexing components in src/drug_spelling were
+adapted from that repository, which accompanies:
+
+Hicham El Boukkouri et al. "CharacterBERT: Reconciling ELMo and BERT for
+Word-Level Open-Vocabulary Representations From Characters." COLING 2020.
+https://aclanthology.org/2020.coling-main.609/
+
+Those components also contain code adapted from Hugging Face Transformers and
+AllenNLP. The original code in this release is provided under the MIT License
+in LICENSE. Third-party-derived components remain subject to their upstream
+terms. Consult the upstream projects for their notices.
+
+The pretrained BioWordVec embeddings used by the study were downloaded from
+the NCBI BioSentVec/BioWordVec repository:
+
+https://github.com/ncbi-nlp/BioSentVec
+
+The BioWordVec embedding file is not redistributed in this release. Consult
+the upstream repository and associated publication for its terms and citation.

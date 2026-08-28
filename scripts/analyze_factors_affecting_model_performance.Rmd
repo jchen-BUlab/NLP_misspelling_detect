@@ -1,0 +1,436 @@
+---
+title: "factors affecting model performance"
+output: html_notebook
+---
+
+#****************************************
+# MIT License
+# Copyright (c) 2026 Jinying Chen
+#  
+# author(s): Jinying Chen, Boston University Chobanian & Avedisian School of Medicine
+# release date: 2026-8-15
+# ver: 1.0
+# 
+# This code was written to support data analysis for the
+# 2026 paper published in JMI Medical Informatics.
+# The code is for research use only, and is provided as it is.
+# 
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(glue)
+library(purrr)
+library(psych)
+```
+
+```{r}
+setwd("./")
+
+indir <- "./results/"
+
+rxnorm_infile <- glue("{indir}/rxnorm_test_predictions.csv")
+ltc_infile <- glue("{indir}/LTCDC_test_predictions.csv")
+  
+df_rxnorm <-read_csv(rxnorm_infile)
+
+df_ltc <- read_csv(ltc_infile)
+```
+# prepocessing
+
+## create length variable for RxNorm
+```{r}
+df_rxnorm$length <- nchar(df_rxnorm$term)
+
+table(df_rxnorm$type_norm)
+
+df_rxnorm$type_norm <- factor(df_rxnorm$type_norm, levels = c("IN", "BN"))
+
+
+describeBy(df_rxnorm$length, group = df_rxnorm$type_norm)
+```
+
+## create length variable for LTC
+```{r}
+df_ltc$length <- nchar(df_ltc$term)
+
+table(df_ltc$term_type)
+
+df_ltc$type_norm <- factor(df_ltc$term_type, levels = c("generic", "brand"))
+
+describeBy(df_ltc$length, group = df_ltc$type_norm)
+```
+
+## distribution of length variables
+```{r}
+hist(df_rxnorm$length)
+```
+
+```{r}
+hist(df_ltc$length)
+```
+
+
+```{r}
+colnames(df_rxnorm)
+```
+
+
+# analysis on RxNorm terms
+## auxilliary funtion
+```{r}
+analyze_RxNorm_terms <- function(
+  df,
+  model_name,
+  predictors,
+  interaction_terms = NULL,
+  conf_level = 0.95
+) {
+  pred_col <- paste0(model_name, "__pred")
+  correct_col <- paste0(model_name, "__correct")
+  
+  if (!pred_col %in% names(df)) {
+    stop("Prediction column not found: ", pred_col)
+  }
+  if (!"target" %in% names(df)) {
+    stop("Column `target` not found.")
+  }
+  
+  if (length(predictors) == 0) {
+    stop("At least one predictor must be provided.")
+  }
+  
+  missing_predictors <- setdiff(predictors, names(df))
+  if (length(missing_predictors) > 0) {
+    stop(
+      "Predictor column(s) not found: ",
+      paste(missing_predictors, collapse = ", ")
+    )
+  }
+  
+  # Standardize interaction_terms
+  # Examples:
+  # interaction_terms = c("A+B", "term length")
+  # interaction_terms = list(c("A+B", "term length"), c("has_digit", "edit distance"))
+  if (!is.null(interaction_terms)) {
+    if (is.character(interaction_terms)) {
+      interaction_terms <- list(interaction_terms)
+    }
+    
+    if (!is.list(interaction_terms)) {
+      stop(
+        "`interaction_terms` must be NULL, a character vector, ",
+        "or a list of character vectors."
+      )
+    }
+    
+    for (x in interaction_terms) {
+      if (!is.character(x) || length(x) < 2) {
+        stop("Each interaction term must contain at least two variable names.")
+      }
+    }
+    
+    interaction_vars <- unique(unlist(interaction_terms, use.names = FALSE))
+    
+    missing_interaction_vars <- setdiff(interaction_vars, names(df))
+    if (length(missing_interaction_vars) > 0) {
+      stop(
+        "Interaction variable(s) not found: ",
+        paste(missing_interaction_vars, collapse = ", ")
+      )
+    }
+  } else {
+    interaction_vars <- character(0)
+  }
+  
+  # Create the model-specific correct column
+  df[[correct_col]] <- as.integer(df[[pred_col]] == df[["target"]])
+  
+  # Work on a modeling copy so we do not return temporary safe-name columns
+  model_df <- df
+  
+  # Include predictors and variables used in interaction terms
+  all_model_vars <- unique(c(predictors, interaction_vars))
+  
+  # Create safe temporary names for formula construction
+  safe_predictor_names <- setNames(
+    paste0(".rxnorm_x", seq_along(all_model_vars)),
+    all_model_vars
+  )
+  
+  # Add safe-name copies to model_df
+  for (v in all_model_vars) {
+    model_df[[safe_predictor_names[[v]]]] <- model_df[[v]]
+  }
+  
+  # Temporary safe outcome name
+  tmp_outcome <- ".correct_outcome_tmp"
+  model_df[[tmp_outcome]] <- model_df[[correct_col]]
+  
+  # Main-effect terms not already included through interaction terms
+  if (!is.null(interaction_terms)) {
+    interaction_vars <- unique(unlist(interaction_terms, use.names = FALSE))
+    
+    other_predictors <- setdiff(predictors, interaction_vars)
+    other_terms <- unname(safe_predictor_names[other_predictors])
+    
+    interaction_formula_terms <- vapply(
+      interaction_terms,
+      function(vars) {
+        safe_vars <- unname(safe_predictor_names[vars])
+        
+        # Using * includes both main effects and the interaction.
+        # For example: A * B = A + B + A:B
+        paste(safe_vars, collapse = " * ")
+      },
+      character(1)
+    )
+    
+    final_terms <- c(other_terms, interaction_formula_terms)
+  } else {
+    final_terms <- unname(safe_predictor_names[predictors])
+  }
+  
+  form <- as.formula(
+    paste(tmp_outcome, "~", paste(final_terms, collapse = " + "))
+  )
+  
+  fit <- glm(
+    formula = form,
+    data = model_df,
+    family = binomial()
+  )
+  
+  s <- summary(fit)$coefficients
+  
+  alpha <- 1 - conf_level
+  z_value <- qnorm(1 - alpha / 2)
+  
+  coef_table <- data.frame(
+    model = model_name,
+    term = rownames(s),
+    estimate = s[, "Estimate"],
+    std_error = s[, "Std. Error"],
+    z_value = s[, "z value"],
+    p_value = s[, "Pr(>|z|)"],
+    odds_ratio = exp(s[, "Estimate"]),
+    ci_lower = exp(s[, "Estimate"] - z_value * s[, "Std. Error"]),
+    ci_upper = exp(s[, "Estimate"] + z_value * s[, "Std. Error"]),
+    row.names = NULL
+  )
+  
+  # Convert safe temporary names back to original names
+  pretty_term <- function(x) {
+    ord <- order(nchar(unname(safe_predictor_names)), decreasing = TRUE)
+    
+    for (i in ord) {
+      safe_name <- unname(safe_predictor_names[i])
+      original_name <- names(safe_predictor_names)[i]
+      x <- gsub(safe_name, original_name, x, fixed = TRUE)
+    }
+    
+    x
+  }
+  
+  coef_table$term <- vapply(coef_table$term, pretty_term, character(1))
+  
+  list(
+    data = df,
+    model_name = model_name,
+    pred_col = pred_col,
+    correct_col = correct_col,
+    predictors = predictors,
+    interaction_terms = interaction_terms,
+    formula_used = form,
+    predictor_name_map = safe_predictor_names,
+    fit = fit,
+    summary = summary(fit),
+    coef_table = coef_table
+  )
+}
+```
+
+
+
+```{r}
+model_names <- sub("__pred$", "", grep("__pred$", names(df_rxnorm), value = TRUE))
+
+predictors <- c("length", "type_norm")
+```
+
+
+## multiple regression
+```{r}
+all_results1 <- lapply(model_names, function(m) {
+  analyze_RxNorm_terms(
+    df = df_rxnorm,
+    model_name = m,
+    predictors = predictors
+  )
+})
+
+names(all_results1) <- model_names
+```
+
+
+```{r}
+all_results1$BERTDrug$coef_table
+```
+
+
+```{r}
+all_results1$CharBERTDrug$coef_table
+```
+
+
+# analysis on LTC terms
+
+```{r}
+colnames(df_ltc)
+
+table(df_ltc$data_type)
+```
+## auxilliary function
+```{r}
+analyze_ltc_terms <- function(
+  df,
+  model_name,
+  predictors,
+  threshold = 0.5,
+  interaction = NULL
+) {
+  prob_col <- paste0(model_name, "_probability")
+  correct_col <- paste0(model_name, "_correct")
+  
+  if (!prob_col %in% names(df)) {
+    stop("Probability column not found: ", prob_col)
+  }
+  if (!"target" %in% names(df)) {
+    stop("Column `target` not found.")
+  }
+  
+  if (!is.null(interaction)) {
+    if (length(interaction) != 2) {
+      stop("`interaction` must be NULL or a character vector of length 2.")
+    }
+    
+    predictors <- unique(c(predictors, interaction))
+  }
+  
+  missing_predictors <- setdiff(predictors, names(df))
+  if (length(missing_predictors) > 0) {
+    stop(
+      "Predictor column(s) not found: ",
+      paste(missing_predictors, collapse = ", ")
+    )
+  }
+  
+  predicted_class <- ifelse(df[[prob_col]] >= threshold, 1, 0)
+  df[[correct_col]] <- as.integer(predicted_class == df[["target"]])
+  
+  tmp_outcome <- ".y_correct"
+  safe_predictor_names <- paste0(".p", seq_along(predictors))
+  names(safe_predictor_names) <- predictors
+  
+  model_df <- data.frame(
+    .y_correct = df[[correct_col]]
+  )
+  
+  for (p in predictors) {
+    model_df[[safe_predictor_names[[p]]]] <- df[[p]]
+  }
+  
+  if (!is.null(interaction)) {
+    safe_interaction <- safe_predictor_names[interaction]
+    
+    other_predictors <- setdiff(predictors, interaction)
+    other_terms <- unname(safe_predictor_names[other_predictors])
+    
+    interaction_term <- paste(unname(safe_interaction), collapse = " * ")
+    final_terms <- c(other_terms, interaction_term)
+  } else {
+    final_terms <- unname(safe_predictor_names[predictors])
+  }
+  
+  form <- as.formula(
+    paste(tmp_outcome, "~", paste(final_terms, collapse = " + "))
+  )
+  
+  fit <- glm(
+    formula = form,
+    data = model_df,
+    family = binomial()
+  )
+  
+  s <- summary(fit)$coefficients
+  
+  coef_table <- data.frame(
+    model = model_name,
+    term = rownames(s),
+    estimate = s[, "Estimate"],
+    std_error = s[, "Std. Error"],
+    z_value = s[, "z value"],
+    p_value = s[, "Pr(>|z|)"],
+    odds_ratio = exp(s[, "Estimate"]),
+    ci_lower = exp(s[, "Estimate"] - 1.96 * s[, "Std. Error"]),
+    ci_upper = exp(s[, "Estimate"] + 1.96 * s[, "Std. Error"]),
+    row.names = NULL
+  )
+  
+  pretty_term <- function(x) {
+    ord <- order(nchar(unname(safe_predictor_names)), decreasing = TRUE)
+    
+    for (i in ord) {
+      safe_name <- unname(safe_predictor_names[i])
+      original_name <- names(safe_predictor_names)[i]
+      x <- gsub(safe_name, original_name, x, fixed = TRUE)
+    }
+    
+    x
+  }
+  
+  coef_table$term <- vapply(coef_table$term, pretty_term, character(1))
+  
+  list(
+    data = df,
+    model_name = model_name,
+    prob_col = prob_col,
+    correct_col = correct_col,
+    predictors = predictors,
+    interaction = interaction,
+    threshold = threshold,
+    formula_used = form,
+    predictor_name_map = safe_predictor_names,
+    fit = fit,
+    summary = summary(fit),
+    coef_table = coef_table
+  )
+}
+```
+
+```{r}
+model_names <- sub("_probability$", "", grep("_probability$", names(df_ltc), value = TRUE))
+
+predictors <- c("length", "type_norm")
+```
+
+## OOV terms, multiple regression
+```{r}
+all_results_ltc_oov1 <- lapply(model_names, function(m) {
+  analyze_ltc_terms(
+    df = df_ltc[df_ltc$data_type == "oov", ],
+    model_name = m,
+    predictors = predictors  
+    )
+})
+
+names(all_results_ltc_oov1) <- model_names
+```
+
+```{r}
+all_results_ltc_oov1$BERTDrug$coef_table
+```
+
+```{r}
+all_results_ltc_oov1$CharBERTDrug$coef_table
+```

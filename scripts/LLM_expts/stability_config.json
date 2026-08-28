@@ -1,0 +1,11 @@
+{
+  "model": "gpt-4o",
+  "trial_folders": [
+      "./trial1/tuning/gptneg4o",
+      "./trial2/tuning/gptneg4o",
+      "./trial3/tuning/gptneg4o",
+      "./trial4/tuning/gptneg4o"
+  ],
+  "output_folder": "./stability_results",
+  "source_filter": "RxNorm"
+}

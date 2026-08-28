@@ -1,0 +1,13 @@
+sample_key,term,target,target_label,term_type,data_type,frequency
+example|0,alpha medicine,0,negative,generic,oov,low
+example|1,alhpa medicine,1,positive,generic,oov,low
+example|2,novexa,0,negative,brand,oov,low
+example|3,nvoexa,1,positive,brand,oov,low
+example|4,beta tablets,0,negative,generic,oov,high
+example|5,btea tablets,1,positive,generic,oov,high
+example|6,xylarin,0,negative,brand,oov,low
+example|7,xylrain,1,positive,brand,oov,low
+example|8,gamma solution,0,negative,generic,non-oov_cleaned,low
+example|9,gamna solution,1,positive,generic,non-oov_cleaned,low
+example|10,unresolved product,0,negative,brand,uncleaned,low
+example|11,unresovled product,1,positive,brand,uncleaned,low

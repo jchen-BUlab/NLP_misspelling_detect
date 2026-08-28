@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the accompanying manuscript."
+title: "Code for Detecting Misspelled Drug Names Using Transformer-based Language Models"
+type: software
+abstract: >-
+  Reproducible data-preparation, training, evaluation, bootstrap, and figure
+  code accompanying a study of BERTDrug, CharBERTDrug, and baseline methods for
+  detecting misspelled medication names.
+authors:
+  - family-names: Lu
+    given-names: Jiayu
+  - family-names: McConeghy
+    given-names: Kevin W.
+  - family-names: Zullo
+    given-names: Andrew R.
+  - family-names: Chen
+    given-names: Jinying
+    email: jinychen@bu.edu
+version: "1.0.0"
+date-released: "2026-08-23"
+license: MIT
+keywords:
+  - misspelling detection
+  - medication names
+  - transformer models
+  - BERT
+  - CharacterBERT
+  - RxNorm
+preferred-citation:
+  type: article
+  title: "Detecting Misspelled Drug Names Using Transformer-based Language Models"
+  authors:
+    - family-names: Lu
+      given-names: Jiayu
+    - family-names: McConeghy
+      given-names: Kevin W.
+    - family-names: Zullo
+      given-names: Andrew R.
+    - family-names: Chen
+      given-names: Jinying
+  year: 2026
