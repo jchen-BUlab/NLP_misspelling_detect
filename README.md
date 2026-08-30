@@ -43,6 +43,17 @@ CharacterBERT resources come from the [CharacterBERT repository](https://github.
 
 The model commands below assume downloaded resources are placed under `code_release/pretrained-models/`. Replace those example paths if the resources are stored elsewhere.
 
+## Fine-tuned model weights
+
+Download the two best fine-tuned checkpoints from the [shared OneDrive folder]().
+
+The shared folder contains the following two checkpoint files. After downloading, place and rename them as shown:
+
+| Downloaded filename | Local path |
+|---|---|
+| `BERTDrug/model_best.pt` | `artifacts/models/BERTDrug/model_best.pt` |
+| `CharBERTDrug/model_best.pt` | `artifacts/models/CharBERTDrug/model_best.pt` |
+
 ## Data preparation
 
 Run the main workflow commands from the root folder.
@@ -101,16 +112,34 @@ python scripts/training/run_spellchecker.py --data-dir artifacts/data/rxnorm --o
 
 ## LTCDC prediction and evaluation
 
-Apply the trained models to `artifacts/data/ltcdc/annotated_test.txt`:
+Apply the published checkpoints to `artifacts/data/ltcdc/annotated_test.txt`:
 
 ```bash
-python scripts/training/predict_transformer.py --run-dir artifacts/models/BERTDrug --input artifacts/data/ltcdc/annotated_test.txt --output-dir artifacts/predictions/ltcdc/BERTDrug
-python scripts/training/predict_transformer.py --run-dir artifacts/models/CharBERTDrug --input artifacts/data/ltcdc/annotated_test.txt --output-dir artifacts/predictions/ltcdc/CharBERTDrug
+python scripts/training/predict_transformer.py \
+  --run-dir artifacts/models/BERTDrug \
+  --model-type bert \
+  --pretrained-model pretrained-models/medical_bert \
+  --max-length 200 \
+  --do-lower-case \
+  --input artifacts/data/ltcdc/annotated_test.txt \
+  --output-dir artifacts/predictions/ltcdc/BERTDrug
+
+python scripts/training/predict_transformer.py \
+  --run-dir artifacts/models/CharBERTDrug \
+  --model-type characterbert \
+  --pretrained-model pretrained-models/medical_character_bert \
+  --tokenizer pretrained-models/bert-base-uncased \
+  --max-length 129 \
+  --do-lower-case \
+  --input artifacts/data/ltcdc/annotated_test.txt \
+  --output-dir artifacts/predictions/ltcdc/CharBERTDrug
 
 python scripts/training/train_fasttext.py --task classification --do_predict --data_dir artifacts/data/ltcdc --test_file annotated_test.txt --model_dir artifacts/models/fastTextML --prediction_output_dir artifacts/predictions/ltcdc/fastTextML
 python scripts/training/train_biowordvec.py --task classification --do_predict --data_dir artifacts/data/ltcdc --test_file annotated_test.txt --model_dir artifacts/models/BioWordVecML --prediction_output_dir artifacts/predictions/ltcdc/BioWordVecML --biowordvec_path pretrained-models/BioWordVec_PubMed_MIMICIII_d200.vec.bin
 python scripts/training/run_spellchecker.py --data-dir artifacts/data/ltcdc --test-file annotated_test.txt --dictionary-data-dir artifacts/data/rxnorm --output-dir artifacts/predictions/ltcdc/SpellChecker
 ```
+
+Runs created by `scripts/training/train_transformer.py` include `run_config.json`; for those runs, `--model-type`, `--pretrained-model`, `--tokenizer`, `--max-length`, and `--do-lower-case` can be omitted.
 
 Merge the five outputs:
 
