@@ -45,7 +45,7 @@ The model commands below assume downloaded resources are placed under `code_rele
 
 ## Fine-tuned model weights
 
-Download the two best fine-tuned checkpoints from the [shared OneDrive folder]().
+Download the two best fine-tuned checkpoints from the [shared OneDrive folder](https://bushare-my.sharepoint.com/:f:/g/personal/jinychen_bu_edu/IgDJTRagLqEuQbQ7janxCNZOAQHzgxURSkIsDVyMzBX-tnI?e=Vd4GzY).
 
 The shared folder contains the following two checkpoint files. After downloading, place and rename them as shown:
 
